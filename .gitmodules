@@ -1,0 +1,4 @@
+[submodule "Bear"]
+	path = Bear
+	url = https://github.com/rizsotto/Bear
+	branch = master

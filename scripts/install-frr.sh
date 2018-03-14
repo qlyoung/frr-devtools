@@ -65,7 +65,7 @@ while getopts "d:hobsvcij:tx:a" opt; do
         mycflags+=" $OPTARG"
         ;;
     a)
-        export LSAN_OPTIONS="suppressions=../tools/lsan-suppressions.txt"
+        export LSAN_OPTIONS="$dir/tools/lsan-suppressions.txt"
         mycflags+=" -fsanitize=address"
         ;;
     esac

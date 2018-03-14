@@ -1,0 +1,10 @@
+#!/bin/bash
+find . -type f -name '*.[ch]' | xargs sed -i -e 's/u_int\([0-9]\{1,3\}\)_t/uint\1_t/g'
+find . -type f -name '*.[ch]' | xargs sed -i -e 's/\([^a-z_]\)u_char\([^a-z_]\)/\1uint8_t\2/g'
+find . -type f -name '*.[ch]' | xargs sed -i -e 's/\([^a-z_]\)u_short\([^a-z_]\)/\1unsigned short\2/g'
+find . -type f -name '*.[ch]' | xargs sed -i -e 's/\([^a-z_]\)u_int\([^a-z_]\)/\1unsigned int\2/g'
+find . -type f -name '*.[ch]' | xargs sed -i -e 's/\([^a-z_]\)u_long\([^a-z_]\)/\1unsigned long\2/g'
+find . -type f -name '*.[ch]' | xargs sed -i -e 's/^u_char /uint8_t /g'
+find . -type f -name '*.[ch]' | xargs sed -i -e 's/^u_short /unsigned short /g'
+find . -type f -name '*.[ch]' | xargs sed -i -e 's/^u_int /unsigned int /g'
+find . -type f -name '*.[ch]' | xargs sed -i -e 's/^u_long /unsigned long /g'

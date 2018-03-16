@@ -9,6 +9,7 @@ bootstrap=0
 verbose=0
 clean=0
 scanbuild=""
+bear=""
 install=0
 jobz=4
 dir="frr"
@@ -18,7 +19,7 @@ ulimit -v unlimited
 mycc="clang-5.0"
 mycflags="-g -O0"
 
-while getopts "d:hobsvcij:tx:a" opt; do
+while getopts "d:hobsvcij:tx:ae" opt; do
     case "$opt" in
     h)
         echo "-h -- display help"
@@ -33,6 +34,7 @@ while getopts "d:hobsvcij:tx:a" opt; do
         echo "-a -- enable address sanitizer"
         echo "-t -- enable thread sanitizer"
         echo "-x -- extra arguments"
+        echo "-e -- generate compile_commands.json with Bear"
         exit
         ;;
     o)
@@ -42,7 +44,7 @@ while getopts "d:hobsvcij:tx:a" opt; do
         bootstrap=1
         ;;
     s)
-        scanbuild="scan-build"
+        scanbuild="scan-build-5.0"
         ;;
     v)  verbose=1
         ;;
@@ -67,6 +69,9 @@ while getopts "d:hobsvcij:tx:a" opt; do
     a)
         export LSAN_OPTIONS="$dir/tools/lsan-suppressions.txt"
         mycflags+=" -fsanitize=address"
+        ;;
+    e)
+        bear="bear"
         ;;
     esac
 done
@@ -120,7 +125,7 @@ if [ $clean -gt 0 ]; then
 fi
 
 if [ $install -gt 0 ]; then
-    $scanbuild make -j $jobz
+    $scanbuild $bear make -j $jobz
     # install
     systemctl stop frr
     rm -rf /var/log/frr/*

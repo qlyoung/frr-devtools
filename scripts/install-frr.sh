@@ -16,7 +16,7 @@ dir="frr"
 
 ulimit -v unlimited
 
-mycc="clang-5.0"
+mycc="clang-7"
 mycflags="-g -O0"
 
 while getopts "d:hobsvcij:tx:ae" opt; do
@@ -44,7 +44,7 @@ while getopts "d:hobsvcij:tx:ae" opt; do
         bootstrap=1
         ;;
     s)
-        scanbuild="scan-build-5.0"
+        scanbuild="scan-build-7"
         ;;
     v)  verbose=1
         ;;

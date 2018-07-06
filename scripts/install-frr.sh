@@ -13,13 +13,14 @@ bear=""
 install=0
 jobz=4
 dir="frr"
+extra_configure_switches=""
 
 ulimit -v unlimited
 
-mycc="clang-7"
+mycc="clang"
 mycflags="-g -O0"
 
-while getopts "d:hobsvcij:tx:ae" opt; do
+while getopts "d:hobsvcij:tx:aem" opt; do
     case "$opt" in
     h)
         echo "-h -- display help"
@@ -33,8 +34,9 @@ while getopts "d:hobsvcij:tx:ae" opt; do
         echo "-d -- project directory"
         echo "-a -- enable address sanitizer"
         echo "-t -- enable thread sanitizer"
-        echo "-x -- extra arguments"
+        echo "-m -- enable memory sanitizer"
         echo "-e -- generate compile_commands.json with Bear"
+        echo "-x -- extra arguments"
         exit
         ;;
     o)
@@ -46,7 +48,8 @@ while getopts "d:hobsvcij:tx:ae" opt; do
     s)
         scanbuild="scan-build-7"
         ;;
-    v)  verbose=1
+    v)
+        verbose=1
         ;;
     c)
         clean=1
@@ -60,18 +63,20 @@ while getopts "d:hobsvcij:tx:ae" opt; do
     d)
         dir=$OPTARG
         ;;
-    t)
-        mycflags+=" -Wthread-safety -fsanitize=thread"
-        ;;
-    x)
-        mycflags+=" $OPTARG"
-        ;;
     a)
-        export LSAN_OPTIONS="$dir/tools/lsan-suppressions.txt"
-        mycflags+=" -fsanitize=address"
+        extra_configure_switches+=" --enable-address-sanitizer"
+        ;;
+    t)
+        extra_configure_switches+=" --enable-thread-sanitizer"
+        ;;
+    m)
+        extra_configure_switches+=" --enable-memory-sanitizer"
         ;;
     e)
         bear="bear"
+        ;;
+    x)
+        mycflags+=" $OPTARG"
         ;;
     esac
 done
@@ -116,8 +121,10 @@ if [ $configure -gt 0 ]; then
         --enable-cumulus=yes \
         --enable-pbrd=yes \
         --enable-dev-build=yes \
-        --enable-nhrpd=no
-#       --enable-snmp=agentx
+        --enable-nhrpd=no \
+        --enable-sharpd=yes \
+        $extra_configure_switches
+        #--enable-snmp=agentx \
 fi
 
 if [ $clean -gt 0 ]; then
@@ -125,6 +132,8 @@ if [ $clean -gt 0 ]; then
 fi
 
 if [ $install -gt 0 ]; then
+    #export C_INCLUDE_PATH=/usr/lib/llvm-6.0/lib/clang/6.0.1/include/
+    #echo $C_INCLUDE_PATH
     $scanbuild $bear make -j $jobz
     # install
     systemctl stop frr

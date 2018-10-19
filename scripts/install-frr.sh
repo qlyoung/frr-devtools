@@ -123,6 +123,10 @@ if [ $configure -gt 0 ]; then
         --enable-dev-build=yes \
         --enable-nhrpd=no \
         --enable-sharpd=yes \
+        --enable-fuzzing=no \
+        --with-pkg-extra-version="" \
+        --enable-rpki=no \
+        --enable-werror=yes \
         $extra_configure_switches
         #--enable-snmp=agentx \
 fi

@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 #
-# Converts zlog_err() to zlog_ferr(), generating the error definitions file as
+# Copyright (C) 2018  Quentin Young
+#
+# Converts zlog_warn() to flog_warn(), generating the error definitions file as
 # it goes.
 #
 # Usage:
 #    convferr.py <source directory>
+
 import re
 import glob
 import os
@@ -32,83 +35,91 @@ header = """/*
 #include <zebra.h>
 """
 
+
 def process_file(f, dfilec, dfileh, dname):
     with open(f, "r") as src:
+
         def repl(am):
             print("Processing: {}\n\n".format(am.group(0)))
-            newcode = input('New code (Y/n):')
-            ecode = ''
+            newcode = input("New code (Y/n):")
+            ecode = ""
 
-            if len(newcode) > 0 and newcode.lower()[0] == 'n':
-                refcode = input('Use existing code: ')
-                ecode = dname.upper() + '_ERR_' + refcode
+            if len(newcode) > 0 and newcode.lower()[0] == "n":
+                refcode = input("Use existing code: ")
+                ecode = dname.upper() + "_ERR_" + refcode
             else:
-                refcode = input('Error suffix: ')
-                reftitl = input('Error title: ')
-                refdesc = input('Error description: ')
-                refsugg = input('Suggestion: ')
+                refcode = input("Error suffix: ")
+                reftitl = input("Error title: ")
+                refdesc = input("Error description: ")
+                refsugg = input("Suggestion: ")
 
-                ecode = dname.upper() + '_ERR_' + refcode
-                dfileh.write('\t{},\n'.format(ecode))
-                dfilec.write('\t{{\n\t\t.code = {},\n\t\t.title = "{}",\n\t\t.description = "{}",\n\t\t.suggestion = "{}",\n\t}},\n'.format(ecode, reftitl, refdesc, refsugg))
+                ecode = dname.upper() + "_ERR_" + refcode
+                dfileh.write("\t{},\n".format(ecode))
+                dfilec.write(
+                    '\t{{\n\t\t.code = {},\n\t\t.title = "{}",\n\t\t.description = "{}",\n\t\t.suggestion = "{}",\n\t}},\n'.format(
+                        ecode, reftitl, refdesc, refsugg
+                    )
+                )
                 dfileh.flush()
                 dfilec.flush()
 
-            replaced_zerr = re.sub('zlog_err\(', 'zlog_ferr\({}, '.format(ecode), am.group(0))
+            replaced_zerr = re.sub(
+                "zlog_warn\(", "flog_warn\({}, ".format(ecode), am.group(0)
+            )
             print("Replacing zerr call with: {}".format(replaced_zerr))
             return replaced_zerr
 
-        pattern = re.compile('zlog_err\([^;]*\);', re.MULTILINE | re.DOTALL)
+        pattern = re.compile("zlog_warn\([^;]*\);", re.MULTILINE | re.DOTALL)
         outfile = re.sub(pattern, repl, src.read())
 
     with open(f, "w") as src:
         src.write(outfile)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("Please enter the following information.")
     uname = input("Real name: ")
     dname = input("Daemon name: ")
     fname = input("Destination file basename (e.g. bgp_errors): ")
 
-    dfilec = open(fname + '.c', 'w')
-    dfileh = open(fname + '.h', 'w')
+    dfilec = open(fname + ".c", "w")
+    dfileh = open(fname + ".h", "w")
 
     header = header.format(dname, uname)
 
     dfileh.write(header)
     dfilec.write(header)
 
-    dfileh.write('#ifndef __{0}_H__\n#define __{0}_H__\n\n'.format(fname))
+    dfileh.write("#ifndef __{0}_H__\n#define __{0}_H__\n\n".format(fname))
     dfileh.write('#include "ferr.h"\n\n')
-    dfileh.write('enum {}_ferr_refs {{\n'.format(dname.lower()))
+    dfileh.write("enum {}_ferr_refs {{\n".format(dname.lower()))
 
     dfilec.write('#include "{}.h"\n#include "ferr.h"\n\n'.format(fname))
-    dfilec.write('static struct ferr_ref ferr_{}_err[] = {{\n'.format(dname.lower()))
+    dfilec.write("static struct log_ref ferr_{}_warn[] = {{\n".format(dname.lower()))
 
-    for f in glob.glob('*.c'):
+    for f in glob.glob("*.c"):
         print("Processing {}".format(f))
         s = input("Skip? (y/N): ")
-        if len(s) > 0 and s[0] == 'y':
+        if len(s) > 0 and s[0] == "y":
             continue
 
         try:
             process_file(f, dfilec, dfileh, dname)
         except KeyboardInterrupt:
+            print("Caught keyboard interrupt")
             break
 
-    dfilec.write('};\n\n')
+    dfilec.write("};\n\n")
+    print("Wrote to file")
     bs = """
 void {0}_error_init(void)
 {{
-	ferr_ref_init();
-
-	ferr_ref_add(ferr_{0}_err);
+	log_ref_add(ferr_{0}_err);
 }}
-""".format(dname.lower())
+""".format(
+        dname.lower()
+    )
     dfilec.write(bs)
     dfilec.close()
-    dfileh.write('}};\n\nextern void {}_error_init(void);\n'.format(dname.lower()))
+    dfileh.write("}};\n\nextern void {}_error_init(void);\n".format(dname.lower()))
     dfileh.close()
-
-

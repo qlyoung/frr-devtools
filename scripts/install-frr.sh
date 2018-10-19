@@ -127,6 +127,9 @@ if [ $configure -gt 0 ]; then
         --with-pkg-extra-version="" \
         --enable-rpki=no \
         --enable-werror=yes \
+        --enable-doc=yes \
+        --enable-doc-html=yes \
+        --enable-static=no \
         $extra_configure_switches
         #--enable-snmp=agentx \
 fi

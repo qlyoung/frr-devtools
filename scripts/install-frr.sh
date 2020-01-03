@@ -98,6 +98,7 @@ echo "CFLAGS: $mycflags"
 echo "LSAN_OPTIONS: $LSAN_OPTIONS"
 echo "AFL_HARDEN: $aflharden"
 echo "LLVM_CONFIG: $LLVM_CONFIG"
+echo "extra_configure_switches: $extra_configure_switches"
 cd $dir
 
 if [ $bootstrap -gt 0 ]; then

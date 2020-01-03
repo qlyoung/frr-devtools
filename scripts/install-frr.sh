@@ -21,7 +21,7 @@ ulimit -v unlimited
 mycc="clang"
 mycflags="-g -O3"
 
-while getopts "d:hobsvcij:tx:aemf" opt; do
+while getopts "d:hobsvcij:taemfx:" opt; do
 	case "$opt" in
 		h)
 			echo "-h -- display help"
@@ -81,15 +81,15 @@ while getopts "d:hobsvcij:tx:aemf" opt; do
 		e)
 			bear="bear"
 			;;
-		x)
-			mycflags+=" $OPTARG"
-			;;
 		f)
 			mycc="afl-clang-fast"
-			mycflags="-g -O0 -funroll-loops"
+			mycflags="-g -O2 -funroll-loops -fno-sanitize-recover=all -fsanitize-trap=all"
+			extra_configure_switches+=" --enable-undefined-sanitizer"
 			aflharden=1
 			LLVM_CONFIG=$(which llvm-config-9)
-			extra_configure_switches+=" --enable-fuzzing"
+			;;
+		x)
+			mycflags+=" $OPTARG"
 			;;
 	esac
 done

@@ -9,18 +9,19 @@ bootstrap=0
 verbose=0
 clean=0
 scanbuild=""
-bear=""
+bear="bear"
 install=0
 jobz=4
 dir="frr"
 extra_configure_switches=""
+aflharden=0
 
 ulimit -v unlimited
 
 mycc="clang"
-mycflags="-g -O0"
+mycflags="-g -O3"
 
-while getopts "d:hobsvcij:tx:aem" opt; do
+while getopts "d:hobsvcij:tx:aemf" opt; do
 	case "$opt" in
 		h)
 			echo "-h -- display help"
@@ -35,8 +36,10 @@ while getopts "d:hobsvcij:tx:aem" opt; do
 			echo "-a -- enable address sanitizer"
 			echo "-t -- enable thread sanitizer"
 			echo "-m -- enable memory sanitizer"
+			echo "-u -- enable undefined behavior sanitizer"
 			echo "-e -- generate compile_commands.json with Bear"
 			echo "-x -- extra arguments"
+			echo "-f -- use afl-clang-fast"
 			exit
 			;;
 		o)
@@ -72,17 +75,29 @@ while getopts "d:hobsvcij:tx:aem" opt; do
 		m)
 			extra_configure_switches+=" --enable-memory-sanitizer"
 			;;
+		u)
+			extra_configure_switches+=" --enable-undefined-sanitizer"
+			;;
 		e)
 			bear="bear"
 			;;
 		x)
 			mycflags+=" $OPTARG"
 			;;
+		f)
+			mycc="afl-clang-fast"
+			mycflags="-g -O0 -funroll-loops"
+			aflharden=1
+			LLVM_CONFIG=$(which llvm-config-9)
+			extra_configure_switches+=" --enable-fuzzing"
+			;;
 	esac
 done
 
 echo "CFLAGS: $mycflags"
 echo "LSAN_OPTIONS: $LSAN_OPTIONS"
+echo "AFL_HARDEN: $aflharden"
+echo "LLVM_CONFIG: $LLVM_CONFIG"
 cd $dir
 
 if [ $bootstrap -gt 0 ]; then
@@ -92,6 +107,7 @@ fi
 if [ $configure -gt 0 ]; then
 	export CC="$mycc"
 	export CFLAGS="$mycflags"
+	export AFL_HARDEN=$aflharden
 	$scanbuild ./configure \
 		--build=x86_64-linux-gnu \
 		--prefix=/usr \
@@ -100,7 +116,6 @@ if [ $configure -gt 0 ]; then
 		--infodir=\${prefix}/share/info \
 		--sysconfdir=/etc/ \
 		--libexecdir=\${prefix}/lib/frr \
-		--enable-dependency-checking \
 		--enable-exampledir=/usr/share/doc/frr/examples/ \
 		--localstatedir=/var/run/frr \
 		--sbindir=/usr/lib/frr \
@@ -123,31 +138,27 @@ if [ $configure -gt 0 ]; then
 		--enable-dev-build=yes \
 		--enable-nhrpd=no \
 		--enable-sharpd=yes \
-		--enable-fuzzing=no \
 		--with-pkg-extra-version="" \
 		--enable-rpki=no \
 		--enable-werror=yes \
 		--enable-doc=yes \
 		--enable-doc-html=yes \
-		--enable-static=no \
+		--enable-static=yes \
 		$extra_configure_switches
-	#--enable-snmp=agentx \
-	fi
+		#--enable-snmp=agentx \
+fi
 
-	if [ $clean -gt 0 ]; then
-		make clean
-	fi
+if [ $clean -gt 0 ]; then
+	make clean
+fi
 
-	if [ $install -gt 0 ]; then
-		#export C_INCLUDE_PATH=/usr/lib/llvm-6.0/lib/clang/6.0.1/include/
-		#echo $C_INCLUDE_PATH
-		$scanbuild $bear make -j $jobz
-		# install
-		systemctl stop frr
-		rm -rf /var/log/frr/*
-		rm -rf /var/support/*
-		rm /usr/lib/frr/*
-		make install
-		systemctl reset-failed frr
-	fi
-
+if [ $install -gt 0 ]; then
+	$scanbuild $bear make -j $jobz
+	# install
+	systemctl stop frr
+	rm -rf /var/log/frr/*
+	rm -rf /var/support/*
+	rm /usr/lib/frr/*
+	make install
+	systemctl reset-failed frr
+fi

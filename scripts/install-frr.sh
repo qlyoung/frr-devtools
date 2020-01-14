@@ -80,14 +80,15 @@ while getopts "d:hobyvcij:taemfx:Zrsu" opt; do
 			extra_configure_switches+=" --enable-memory-sanitizer"
 			;;
 		u)
-			extra_configure_switches+=" --enable-undefined-sanitizer -fno-sanitize-recover=all"
+			mycflags+=" -fno-sanitize-recover=all"
+			extra_configure_switches+=" --enable-undefined-sanitizer"
 			;;
 		e)
 			bear="bear"
 			;;
 		f)
 			mycc="afl-clang-fast"
-			mycflags+="-g -O2 -funroll-loops -fsanitize-trap=all"
+			mycflags+=" -g -O2 -funroll-loops -fsanitize-trap=all"
 			aflharden=1
 			;;
 		Z)

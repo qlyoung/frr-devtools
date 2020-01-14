@@ -179,3 +179,4 @@ if [ $install -gt 0 ]; then
 	make install
 	systemctl reset-failed frr
 fi
+exit 0

@@ -22,7 +22,7 @@ ulimit -v unlimited
 mycc="clang"
 mycflags="-g -O0"
 
-while getopts "d:hobyvcij:taemfx:Zrs" opt; do
+while getopts "d:hobyvcij:taemfx:Zrsu" opt; do
 	case "$opt" in
 		h)
 			echo "-h -- display help"
@@ -87,20 +87,20 @@ while getopts "d:hobyvcij:taemfx:Zrs" opt; do
 			;;
 		f)
 			mycc="afl-clang-fast"
-			mycflags="-g -O2 -funroll-loops -fsanitize-trap=all"
+			mycflags+="-g -O2 -funroll-loops -fsanitize-trap=all"
 			aflharden=1
 			;;
 		Z)
 			mycc="clang"
-			extra_configure_switches=" --enable-libfuzzer"
-			mycflags="-g -O2 -funroll-loops"
+			extra_configure_switches+=" --enable-libfuzzer"
+			mycflags+=" -g -O2 -funroll-loops"
 			;;
 		r)
 			echo "Building with code coverage enabled"
-			mycflags+=" -g -fprofile-instr-generate -fcoverage-mapping"
+			mycflags++=" -g -fprofile-instr-generate -fcoverage-mapping"
 			;;
 		s)
-			extra_configure_switches=" --enable-shared --enable-static --enable-static-bin"
+			extra_configure_switches+=" --enable-shared --enable-static --enable-static-bin"
 			;;
 		x)
 			mycflags+=" $OPTARG"

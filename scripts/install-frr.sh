@@ -15,13 +15,14 @@ jobz=4
 dir="frr"
 extra_configure_switches=""
 aflharden=0
+llvmconfig=$(which llvm-config)
 
 ulimit -v unlimited
 
 mycc="clang"
-mycflags="-g -O3"
+mycflags="-g -O0"
 
-while getopts "d:hobsvcij:taemfx:" opt; do
+while getopts "d:hobyvcij:taemfx:Zrs" opt; do
 	case "$opt" in
 		h)
 			echo "-h -- display help"
@@ -33,13 +34,16 @@ while getopts "d:hobsvcij:taemfx:" opt; do
 			echo "-i -- clean install"
 			echo "-j -- # jobs for make"
 			echo "-d -- project directory"
+			echo "-e -- generate compile_commands.json with Bear"
 			echo "-a -- enable address sanitizer"
 			echo "-t -- enable thread sanitizer"
 			echo "-m -- enable memory sanitizer"
 			echo "-u -- enable undefined behavior sanitizer"
-			echo "-e -- generate compile_commands.json with Bear"
+			echo "-f -- build as fuzzing targets for AFL"
+			echo "-Z -- build as fuzzing targets for libFuzzer"
+			echo "-r -- build with LLVM coverage instrumentation"
+			echo "-s -- use static linking"
 			echo "-x -- extra arguments"
-			echo "-f -- use afl-clang-fast"
 			exit
 			;;
 		o)
@@ -48,8 +52,8 @@ while getopts "d:hobsvcij:taemfx:" opt; do
 		b)
 			bootstrap=1
 			;;
-		s)
-			scanbuild="scan-build-7"
+		y)
+			scanbuild="scan-build"
 			;;
 		v)
 			verbose=1
@@ -76,17 +80,27 @@ while getopts "d:hobsvcij:taemfx:" opt; do
 			extra_configure_switches+=" --enable-memory-sanitizer"
 			;;
 		u)
-			extra_configure_switches+=" --enable-undefined-sanitizer"
+			extra_configure_switches+=" --enable-undefined-sanitizer -fno-sanitize-recover=all"
 			;;
 		e)
 			bear="bear"
 			;;
 		f)
 			mycc="afl-clang-fast"
-			mycflags="-g -O2 -funroll-loops -fno-sanitize-recover=all -fsanitize-trap=all"
-			extra_configure_switches+=" --enable-undefined-sanitizer"
+			mycflags="-g -O2 -funroll-loops -fsanitize-trap=all"
 			aflharden=1
-			LLVM_CONFIG=$(which llvm-config-9)
+			;;
+		Z)
+			mycc="clang"
+			extra_configure_switches=" --enable-libfuzzer"
+			mycflags="-g -O2 -funroll-loops"
+			;;
+		r)
+			echo "Building with code coverage enabled"
+			mycflags+=" -g -fprofile-instr-generate -fcoverage-mapping"
+			;;
+		s)
+			extra_configure_switches=" --enable-shared --enable-static --enable-static-bin"
 			;;
 		x)
 			mycflags+=" $OPTARG"
@@ -95,9 +109,9 @@ while getopts "d:hobsvcij:taemfx:" opt; do
 done
 
 echo "CFLAGS: $mycflags"
-echo "LSAN_OPTIONS: $LSAN_OPTIONS"
+echo "CC: $mycc"
 echo "AFL_HARDEN: $aflharden"
-echo "LLVM_CONFIG: $LLVM_CONFIG"
+echo "LLVM_CONFIG: $llvmconfig"
 echo "extra_configure_switches: $extra_configure_switches"
 cd $dir
 
@@ -109,6 +123,7 @@ if [ $configure -gt 0 ]; then
 	export CC="$mycc"
 	export CFLAGS="$mycflags"
 	export AFL_HARDEN=$aflharden
+	export LLVM_CONFIG=$llvmconfig
 	$scanbuild ./configure \
 		--build=x86_64-linux-gnu \
 		--prefix=/usr \
@@ -129,7 +144,7 @@ if [ $configure -gt 0 ]; then
 		--enable-vty-group=frrvty \
 		--enable-configfile-mask=0640 \
 		--enable-logfile-mask=0640 \
-		--enable-systemd=yes \
+		--enable-systemd=no \
 		--enable-vtysh=yes \
 		--enable-pimd=yes \
 		--enable-bgp-vnc=no \

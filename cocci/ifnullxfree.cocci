@@ -5,11 +5,18 @@
 // Comments: -
 // Options: --no-includes --include-headers
 
-virtual patch
-
-@r2 depends on patch@
+@@
 expression E;
 expression Y;
 @@
 - if (E != NULL)
 XFREE(Y, E);
+
+@@
+expression E;
+expression Y;
+@@
+
+- if (E != NULL) {
+XFREE(Y, E);
+- }

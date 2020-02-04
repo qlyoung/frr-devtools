@@ -20,7 +20,7 @@ llvmconfig=$(which llvm-config)
 ulimit -v unlimited
 
 mycc="clang"
-mycflags="-g -O0"
+mycflags="-g3 -O0"
 
 while getopts "d:hobyvcij:taemfx:Zrsu" opt; do
 	case "$opt" in
@@ -43,7 +43,7 @@ while getopts "d:hobyvcij:taemfx:Zrsu" opt; do
 			echo "-Z -- build as fuzzing targets for libFuzzer"
 			echo "-r -- build with LLVM coverage instrumentation"
 			echo "-s -- use static linking"
-			echo "-x -- extra arguments"
+			echo "-x -- add to CFLAGS"
 			exit
 			;;
 		o)
@@ -88,13 +88,13 @@ while getopts "d:hobyvcij:taemfx:Zrsu" opt; do
 			;;
 		f)
 			mycc="afl-clang-fast"
-			mycflags+=" -g -O2 -funroll-loops -fsanitize-trap=all"
+			mycflags+=" -g3 -O0 -funroll-loops -fsanitize-trap=all"
 			aflharden=1
 			;;
 		Z)
 			mycc="clang"
 			extra_configure_switches+=" --enable-libfuzzer"
-			mycflags+=" -g -O2 -funroll-loops"
+			mycflags+=" -g3 -O0 -funroll-loops"
 			;;
 		r)
 			echo "Building with code coverage enabled"

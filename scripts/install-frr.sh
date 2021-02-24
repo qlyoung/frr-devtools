@@ -173,7 +173,7 @@ if [ $configure -gt 0 ]; then
 		--enable-vty-group=frrvty \
 		--enable-configfile-mask=0640 \
 		--enable-logfile-mask=0640 \
-		--enable-systemd=no \
+		--enable-systemd=yes \
 		--enable-vtysh=yes \
 		--enable-pimd=yes \
 		--enable-bgp-vnc=no \
@@ -190,6 +190,7 @@ if [ $configure -gt 0 ]; then
 		--enable-doc-html=yes \
 		--enable-static=yes \
 		--enable-grpc=yes \
+		--enable-lttng=yes \
 		$extra_configure_switches
 		#--enable-snmp=agentx \
 fi
